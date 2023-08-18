@@ -56,6 +56,27 @@ async function run() {
             res.send({ result, token });
         });
 
+        // update profile 
+        app.patch('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const profileInfo = req.body;
+            const filter = { email: email };
+            const updateDoc = {
+                $set: profileInfo
+            }
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+        // load user profile data 
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = await userCollection.find(query).toArray();
+            res.send(result);
+        })
+
+
         // load services data 
         app.get('/services', async (req, res) => {
             const query = {};
