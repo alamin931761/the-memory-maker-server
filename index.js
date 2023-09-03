@@ -170,11 +170,21 @@ async function run() {
             });
         });
 
+        // store order data in database
         app.post('/orders', async (req, res) => {
             const details = req.body;
             const result = await orderCollection.insertOne(details);
             res.send(result);
         });
+
+        // load my order data from database 
+        app.get("/myOrders/:email", verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const myOrders = await orderCollection.find(query).toArray();
+            res.send(myOrders);
+        });
+
     } finally {
 
     }
