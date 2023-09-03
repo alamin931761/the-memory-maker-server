@@ -3,14 +3,15 @@ const app = express();
 const cors = require('cors');
 const port = process.env.PORT || 5000;
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 
 // middleware
 app.use(cors());
 app.use(express.json());
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.vstitnk.mongodb.net/?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.kfxi2vn.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -39,8 +40,12 @@ const verifyJWT = (req, res, next) => {
 async function run() {
     try {
         await client.connect();
-        const serviceCollection = client.db('the-story-keeper').collection("service");
-        const userCollection = client.db('the-story-keeper').collection("user");
+        const packageCollection = client.db('the-memory-maker').collection("package");
+        const userCollection = client.db('the-memory-maker').collection("user");
+        const reviewCollection = client.db('the-memory-maker').collection("review");
+        const printCollection = client.db('the-memory-maker').collection("print");
+        const temporaryDataCollection = client.db('the-memory-maker').collection("temporary-data");
+        const orderCollection = client.db('the-memory-maker').collection("order");
 
         // create and update user 
         app.put('/user/:email', async (req, res) => {
@@ -57,7 +62,7 @@ async function run() {
         });
 
         // update profile 
-        app.patch('/user/:email', async (req, res) => {
+        app.patch('/user/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const profileInfo = req.body;
             const filter = { email: email };
@@ -69,22 +74,107 @@ async function run() {
         });
 
         // load user profile data 
-        app.get('/user/:email', async (req, res) => {
+        app.get('/user/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
             const result = await userCollection.find(query).toArray();
             res.send(result);
-        })
-
-
-        // load services data 
-        app.get('/services', async (req, res) => {
-            const query = {};
-            const cursor = serviceCollection.find(query);
-            const services = await cursor.toArray();
-            res.send(services);
         });
 
+        // add review 
+        app.post('/addReview', verifyJWT, async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send(result);
+        });
+
+        // load reviews 
+        app.get('/reviews', async (req, res) => {
+            const query = {};
+            const result = await reviewCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        // load services data 
+        app.get('/packages', async (req, res) => {
+            const query = {};
+            const result = await packageCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        // load prints data 
+        app.get('/prints', async (req, res) => {
+            const query = {};
+            const prints = await printCollection.find(query).toArray();
+            res.send(prints);
+        });
+
+        // load specified print data
+        app.get('/printDetails/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await printCollection.findOne(query);
+            res.send(result);
+        });
+
+        // create and update temporary cart data 
+        app.put('/temporaryData/:email', async (req, res) => {
+            const email = req.params.email;
+            const order = req.body;
+            const name = req.headers.name;
+            const price = req.headers.price;
+            const filter = { email: email, name: name, price: price };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: order
+            };
+            const result = await temporaryDataCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        });
+
+        // load temporary cart data
+        app.get('/temporaryData/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = await temporaryDataCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        // automatically delete temporary data 
+        app.delete('/temporaryData/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = temporaryDataCollection.deleteMany(query);
+            res.send(result);
+        });
+
+        // remove from cart 
+        app.delete('/temporaryCartData/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await temporaryDataCollection.deleteOne(query);
+            res.send(result);
+        });
+
+        // stripe
+        app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+            const { grandTotal } = req.body;
+            const amount = grandTotal * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ['card']
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
+
+        app.post('/orders', async (req, res) => {
+            const details = req.body;
+            const result = await orderCollection.insertOne(details);
+            res.send(result);
+        });
     } finally {
 
     }
