@@ -6,6 +6,7 @@ require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
+const nodemailer = require("nodemailer");
 
 // middleware
 app.use(cors());
@@ -35,6 +36,40 @@ const verifyJWT = (req, res, next) => {
         req.decoded = decoded;
         next();
     });
+}
+
+// send payment confirmation email 
+let transporter = nodemailer.createTransport({
+    host: 'smtp.sendgrid.net',
+    port: 587,
+    auth: {
+        user: "apikey",
+        pass: process.env.SENDGRID_API_KEY
+    }
+})
+const sendPaymentConfirmationEmail = payment => {
+    const { email, name, transactionId } = payment;
+    transporter.sendMail({
+        from: "alamin931761@gmail.com",
+        to: payment.email,
+        subject: "Your order is confirmed.",
+        text: "Payment Confirmed",
+        html: `<div>
+        <h2>Hello, ${name},
+        <h3>Your order has been confirmed</h3>
+        <p>Your Transaction ID is <u>${transactionId}</u></p>
+
+        <p>Our Address</p>
+        <p>Gazipur, Bangladesh</p>
+        <div>`,
+    }, function (error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log('Email sent: ', info.response);
+        }
+    });
+
 }
 
 async function run() {
@@ -174,6 +209,9 @@ async function run() {
         app.post('/orders', async (req, res) => {
             const details = req.body;
             const result = await orderCollection.insertOne(details);
+
+            // send an email confirming payment
+            sendPaymentConfirmationEmail(details);
             res.send(result);
         });
 
