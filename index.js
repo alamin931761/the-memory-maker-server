@@ -242,13 +242,20 @@ async function run() {
         });
 
         // update status
-        app.patch('/orders/:id', async (req, res) => {
+        app.patch('/orders/:id', verifyJWT, verifyOwner, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const updateDoc = {
                 $set: { status: 'Shipped' }
             };
             const result = await orderCollection.updateOne(query, updateDoc);
+            res.send(result);
+        });
+
+        // add print 
+        app.post('/addPrint', verifyJWT, verifyOwner, async (req, res) => {
+            const printData = req.body;
+            const result = await printCollection.insertOne(printData);
             res.send(result);
         });
 
