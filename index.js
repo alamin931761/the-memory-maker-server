@@ -51,13 +51,13 @@ const sendPaymentConfirmationEmail = payment => {
     const { email, name, transactionId } = payment;
     transporter.sendMail({
         from: "alamin931761@gmail.com",
-        to: payment.email,
+        to: email,
         subject: "Your order is confirmed.",
         text: "Payment Confirmed",
         html: `<div>
         <h2>Hello, ${name},
         <h3>Your order has been confirmed</h3>
-        <p>Your Transaction ID is <u>${transactionId}</u></p>
+        <p>Your Transaction ID is <b>${transactionId}</b></p>
 
         <p>Our Address</p>
         <p>Gazipur, Bangladesh</p>
@@ -81,6 +81,17 @@ async function run() {
         const printCollection = client.db('the-memory-maker').collection("print");
         const temporaryDataCollection = client.db('the-memory-maker').collection("temporary-data");
         const orderCollection = client.db('the-memory-maker').collection("order");
+
+        // verify owner
+        const verifyOwner = (req, res, next) => {
+            const requester = req.decoded.email;
+            console.log('requester--> ', requester);
+            if (requester === 'alamin931761@gmail.com') {
+                next();
+            } else {
+                res.status(403).send({ message: 'forbidden access' });
+            }
+        }
 
         // create and update user 
         app.put('/user/:email', async (req, res) => {
@@ -221,6 +232,24 @@ async function run() {
             const query = { email: email };
             const myOrders = await orderCollection.find(query).toArray();
             res.send(myOrders);
+        });
+
+        // load orders from database 
+        app.get("/orders", verifyJWT, verifyOwner, async (req, res) => {
+            const query = {};
+            const myOrders = await orderCollection.find(query).toArray();
+            res.send(myOrders);
+        });
+
+        // update status
+        app.patch('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: { status: 'Shipped' }
+            };
+            const result = await orderCollection.updateOne(query, updateDoc);
+            res.send(result);
         });
 
     } finally {
