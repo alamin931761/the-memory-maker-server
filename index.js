@@ -281,6 +281,14 @@ async function run() {
             res.send(result);
         });
 
+        // delete print 
+        app.delete(`/allPrint/:id`, verifyJWT, verifyOwner, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await printCollection.deleteOne(query);
+            res.send(result);
+        });
+
     } finally {
 
     }
