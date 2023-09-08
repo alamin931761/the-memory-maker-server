@@ -150,9 +150,13 @@ async function run() {
 
         // load prints data 
         app.get('/prints', async (req, res) => {
+            const page = parseInt(req.query.page) || 0;
+            const limit = parseInt(req.query.limit) || 3;
+            const skip = page * limit;
             const query = {};
-            const prints = await printCollection.find(query).toArray();
-            res.send(prints);
+            const prints = await printCollection.find(query).skip(skip).limit(limit).toArray();
+            const count = await printCollection.estimatedDocumentCount();
+            res.send({ prints, count });
         });
 
         // load specified print data
@@ -256,6 +260,24 @@ async function run() {
         app.post('/addPrint', verifyJWT, verifyOwner, async (req, res) => {
             const printData = req.body;
             const result = await printCollection.insertOne(printData);
+            res.send(result);
+        });
+
+        // load all print 
+        app.get('/allPrint', async (req, res) => {
+            const allPrint = await printCollection.find().toArray();
+            res.send(allPrint);
+        });
+
+        // edit print data 
+        app.patch('/allPrint/:id', verifyJWT, verifyOwner, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const updatedPrint = req.body;
+            const updateDoc = {
+                $set: updatedPrint
+            };
+            const result = await printCollection.updateOne(query, updateDoc);
             res.send(result);
         });
 
