@@ -80,12 +80,12 @@ async function run() {
         const reviewCollection = client.db('the-memory-maker').collection("review");
         const printCollection = client.db('the-memory-maker').collection("print");
         const temporaryDataCollection = client.db('the-memory-maker').collection("temporary-data");
+        const wishlistCollection = client.db('the-memory-maker').collection("wishlist");
         const orderCollection = client.db('the-memory-maker').collection("order");
 
         // verify owner
         const verifyOwner = (req, res, next) => {
             const requester = req.decoded.email;
-            console.log('requester--> ', requester);
             if (requester === 'alamin931761@gmail.com') {
                 next();
             } else {
@@ -151,7 +151,7 @@ async function run() {
         // load prints data 
         app.get('/prints', async (req, res) => {
             const page = parseInt(req.query.page) || 0;
-            const limit = parseInt(req.query.limit) || 3;
+            const limit = parseInt(req.query.limit) || 6;
             const skip = page * limit;
             const query = {};
             const prints = await printCollection.find(query).skip(skip).limit(limit).toArray();
@@ -181,6 +181,26 @@ async function run() {
             const result = await temporaryDataCollection.updateOne(filter, updateDoc, options);
             res.send(result);
         });
+
+        // create wishlist data 
+        app.patch('/myWishlist/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const arrayOfWishlistIds = req.body;
+            const filter = { email: email };
+            const updateDoc = {
+                $set: arrayOfWishlistIds
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+        // load wishlist data 
+        app.get('/myWishlist/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = await userCollection.findOne(query);
+            res.send(result);
+        })
 
         // load temporary cart data
         app.get('/temporaryData/:email', async (req, res) => {
