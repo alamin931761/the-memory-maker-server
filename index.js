@@ -141,6 +141,26 @@ async function run() {
             res.send(result);
         });
 
+        // edit review 
+        app.patch('/review/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const updatedReview = req.body;
+            const updateDoc = {
+                $set: updatedReview
+            };
+            const result = await reviewCollection.updateOne(query, updateDoc);
+            res.send(result);
+        });
+
+        // delete review 
+        app.delete('/review/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await reviewCollection.deleteOne(query);
+            res.send(result);
+        });
+
         // load services data 
         app.get('/packages', async (req, res) => {
             const query = {};
