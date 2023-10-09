@@ -80,7 +80,6 @@ async function run() {
         const reviewCollection = client.db('the-memory-maker').collection("review");
         const printCollection = client.db('the-memory-maker').collection("print");
         const temporaryDataCollection = client.db('the-memory-maker').collection("temporary-data");
-        const wishlistCollection = client.db('the-memory-maker').collection("wishlist");
         const orderCollection = client.db('the-memory-maker').collection("order");
 
         // verify owner
