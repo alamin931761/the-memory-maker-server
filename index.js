@@ -74,7 +74,6 @@ const sendPaymentConfirmationEmail = payment => {
 
 async function run() {
     try {
-        await client.connect();
         const packageCollection = client.db('the-memory-maker').collection("package");
         const userCollection = client.db('the-memory-maker').collection("user");
         const reviewCollection = client.db('the-memory-maker').collection("review");
@@ -333,6 +332,8 @@ async function run() {
             res.send(result);
         });
 
+        // Send a ping to confirm a successful connection
+        await client.db("admin").command({ ping: 1 });
     } finally {
 
     }
