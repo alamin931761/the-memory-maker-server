@@ -20,6 +20,7 @@ const client = new MongoClient(uri, {
         deprecationErrors: true,
     }
 });
+console.log(uri);
 
 // jwt 
 const verifyJWT = (req, res, next) => {

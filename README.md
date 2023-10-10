@@ -22,7 +22,7 @@ Welcome to The Memory Maker. It is a photographer's website. This repository con
 * Express js
 * MongoDB
 * Firebase
-* Render
+* Vercel
 
 ##
 Live site: [The Memory Maker](https://the-memory-maker-71efe.firebaseapp.com) <br>
