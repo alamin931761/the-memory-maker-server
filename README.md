@@ -1,5 +1,5 @@
 # [The Memory Maker](https://the-memory-maker-71efe.firebaseapp.com)
-Welcome to The Memory Maker. It is a photographer's website. This repository contains the client-side code for the website.
+Welcome to The Memory Maker. It is a photographer's website. This repository contains the server-side code for the website.
 
 ## Login Credentials
 * Owner:
